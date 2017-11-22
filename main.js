@@ -57,8 +57,8 @@ function arb_digit_to_ascii(string){
 
 function normalize_diac(string){
     return string
-            // to delete starting taskeels
-            .replace(/(?=\s|^)[\u064B-\u0652]*/g,'')
+            // to delete starting taskeels (lookbehind)
+            .replace(/(\s|^)[\u064B-\u0652]+/g,'$1')
             //beggining of surah
             .replace(/([لمحكهعص])ٓ/g,"$1")
 
