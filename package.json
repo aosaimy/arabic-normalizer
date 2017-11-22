@@ -25,5 +25,9 @@
   "devDependencies": {
     "mocha": "^4.0.1",
     "test": "^0.6.0"
+  },
+  "dependencies": {
+    "event-stream": "^3.3.4",
+    "yargs": "^10.0.3"
   }
 }

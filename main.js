@@ -204,7 +204,7 @@ var default_config = {
 
 if (require.main === module) { // called directly
     var argv = require('yargs')
-    .usage('Usage: $0 [-m all|exceptPos] [-st] [-e example_filename] -f filename')
+    .usage('Usage: $0 [args] -f inputfilename')
     .default('f',"/dev/stdin")
     .describe('f','input file')
     .boolean('diac').describe('diac','remove diac').default('diac',false)
