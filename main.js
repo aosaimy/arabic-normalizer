@@ -2,7 +2,7 @@
 var fs = require('fs');
 var es = require('event-stream');
 
-utf8_to_ascii = {'\u0660':'0', '\u0661':'1', '\u0662':'2',
+var utf8_to_ascii = {'\u0660':'0', '\u0661':'1', '\u0662':'2',
                 '\u0663':'3', '\u0664':'4', '\u0665':'5',
                 '\u0666':'6', '\u0667':'7', '\u0668':'8',
                 '\u0669':'9', '\u06F0':'0', '\u06F1':'1',
@@ -13,40 +13,40 @@ utf8_to_ascii = {'\u0660':'0', '\u0661':'1', '\u0662':'2',
 // Patterns
 // Match any character not in the Arabic charts
 // Including presentation forms
-p_not_arb = /[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g
+// var p_not_arb = /[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g
 
 // Segment punctuation
-latin_punc = /([\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u00A1-\u00BF\u2010-\u2027\u2030-\u205E\u20A0-\u20B5\u2E2E]{1})/g
-arb_punc = /([\u0609-\u060D\u061B-\u061F\u066A\u066C-\u066D\u06D4]{1})/g
-other_punc = /([\u2E2E]{1})/g
+var latin_punc = /([\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u00A1-\u00BF\u2010-\u2027\u2030-\u205E\u20A0-\u20B5\u2E2E]{1})/g
+var arb_punc = /([\u0609-\u060D\u061B-\u061F\u066A\u066C-\u066D\u06D4]{1})/g
+var other_punc = /([\u2E2E]{1})/g
 
 // Segment digits
-ascii_digit = /(\d+)/g
-arb_digit = /([\u06F0-\u06F9\u0660-\u0669]+)/g
-arb_letter = /[\u0627-\u063A\u0641-\u064A]/
+var ascii_digit = /(\d+)/g
+var arb_digit = /([\u06F0-\u06F9\u0660-\u0669]+)/g
 
 // Patterns commonly found in newswire (e.g., the ATB)
-date_cluster = /\d+\-\d+/g
-email_cluster = /[\w\-][\w\-\.]+@[\w\-][\w\-\.]+[a-zA-Z]{1,4}/g
-url_cluster = /[a-zA-Z]+.[a-zA-Z]+/g
-ellipsis = /(\.{2,})/g
+var date_cluster = /\d+\-\d+/g
+var email_cluster = /[\w\-][\w\-\.]+@[\w\-][\w\-\.]+[a-zA-Z]{1,4}/g
+var url_cluster = /[a-zA-Z]+.[a-zA-Z]+/g
+var ellipsis = /(\.{2,})/g
 
 // Strip diacritics, tatweel, extended Arabic
-p_diac = /[\u064B-\u0652]/g
-p_diac_full = /^[\u064B-\u0652]+$/g
-p_tat = /ـ/g
-p_quran = /[\u0615-\u061A\u06D6-\u06E5]/g
+var p_diac = /[\u064B-\u0652]/g
+var p_diac_full = /^[\u064B-\u0652]+$/g
+var p_tat = /ـ/g
+var p_quran = /[\u0615-\u061A\u06D6-\u06E5]/g
 
 // Normalize alif
-p_alef = /ا|إ|أ|آ|\u0671/
+var p_alef = /ا|إ|أ|آ|\u0671/
 
 // Escape Basic Latin (U0000) and Latin-1 (U0080) characters
-p_latin = /[\u0000-\u00FF]/
+var p_latin = /[\u0000-\u00FF]/
 
 function arb_digit_to_ascii(string){
+    "use strict";
     var ascii_digits = []
     for (var c_idx in string) {
-        new_digit = utf8_to_ascii[string[c_idx]]
+        var new_digit = utf8_to_ascii[string[c_idx]]
         if (new_digit)
             ascii_digits.push(new_digit)
         else
@@ -56,6 +56,7 @@ function arb_digit_to_ascii(string){
 }
 
 function normalize_diac(string){
+        "use strict";
     return string
             // to delete starting taskeels (lookbehind)
             .replace(/(\s|^)[\u064B-\u0652]+/g,'$1')
@@ -75,8 +76,8 @@ function normalize_diac(string){
 
             // add sukon to mad Alif
             .replace(/َا/g,"َاْ")
-            .replace(/ِي/g,"ِيْ")
-            .replace(/ُو/g,"ُوْ")
+            // .replace(/iy/g,"iyo")
+            // .replace(/uw/g,"uwo")
 
             //remove diac if the same is put more than once
             .replace(/([\u064B-\u0652])\1/g,"$1")
@@ -104,6 +105,7 @@ function normalize_diac(string){
 }
 
 function carefully_segment(line,config){
+        "use strict";
     var tokens = []
     var stripped = line.trim()
     if ( stripped.length > 0 && stripped[0] == '<'){
@@ -120,7 +122,7 @@ function carefully_segment(line,config){
     line = line.replace(/&amp;/g,' & ')
     line = line.replace(/&quot;/g,' " ')
     var splitted  =line.split(" ")
-    for (let word of splitted){
+    splitted.forEach(word=>{
         if ( date_cluster.test(word))
             tokens.push(word)
         else if ( email_cluster.test(word))
@@ -153,22 +155,23 @@ function carefully_segment(line,config){
                     tokens.push(v)
             })
         }
-    }
+    });
     return tokens
 }
 
 var norm_input_line = function (line,config){
+        "use strict";
     if(config.normalize_diac)
         line = normalize_diac(line)
     line = carefully_segment(line,config)
-    new_line = []
+    var new_line = []
     for (let word of line) {
         // if(config.normalize_diac && normalize_diac(word) != word)
         //     console.log("n=",normalize_diac(word)," o=",word)
         if (p_latin.test(word))
             new_line.push(word.trim())
         else if (arb_digit.test(word)){
-            asciified = arb_digit_to_ascii(word)
+            var asciified = arb_digit_to_ascii(word)
             new_line.push(asciified)
         }
         else if (word == '\u060C')
@@ -183,7 +186,7 @@ var norm_input_line = function (line,config){
             if(config.alif)
                 word = word.replace(p_alef,'ا')
             word = word.replace(p_quran,'')
-            if(word!='')
+            if(word!=='')
                 new_line.push(word.trim())
         }
     }
@@ -223,15 +226,18 @@ if (require.main === module) { // called directly
     fs.createReadStream(argv.f)
        .pipe(es.split("\n"))
        .pipe(es.through(function(line){
+            "use strict";
             lineId = lineId + 1
             this.emit('data',norm_input_line(line,argv)+"\n")
        },function(){
-        console.error(`Processed ${lineId} lines`)
+            "use strict";
+            console.error(`Processed ${lineId} lines`)
        }))
       .pipe(process.stdout)
 }
 else
     module.exports = function (infile,config){
+            "use strict";
         
         config = config || {}
         Object.keys(default_config).forEach(e=>config[e] = config[e] || default_config[e])

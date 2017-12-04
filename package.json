@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/aosaimy/arabic-normalizer#readme",
   "devDependencies": {
+    "buckwalter-transliteration": "github:aosaimy/buckwalter-transliteration",
     "mocha": "^4.0.1",
     "test": "^0.6.0"
   },
