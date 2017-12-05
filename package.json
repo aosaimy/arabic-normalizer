@@ -1,10 +1,13 @@
 {
   "name": "arabic-normalizer",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Configurable Text normalizer and tokenizer for Arabic texts. It normalizes diacrics, hamaza, digits, etc. It tokenize punctionation, digits, etc from text. It enforce text standard in several aspects: diacritcs, letters, and tokenization.",
   "main": "main.js",
   "scripts": {
     "test": "mocha test/*.js"
+  },
+  "bin": {
+    "arnormalize": "./main.js"
   },
   "repository": {
     "type": "git",

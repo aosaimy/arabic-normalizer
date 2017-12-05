@@ -14,6 +14,17 @@ describe('diacritics', ()=>{
 		})
 	})
 
+	describe('use its functions and regexp directly', function() {
+		var funcs = normalizer()
+    	it('funcs', ()=>{
+			assert.equal(u2b(funcs.normalize_diac(b2u(">aalif"))), ">alif")
+		})
+    	it('regexp', ()=>{
+			assert.equal("شسيasd1س١٢٣".replace(funcs.regexp.p_not_arb,""), "شسيس١٢٣")
+			assert.equal("شسيasd1س١٢٣".replace(funcs.regexp.arb_digit,""), "شسيasd1س")
+		})
+	})
+
 	describe('normalize_diacritics', function() {
 		it("should remove starting diacritics", ()=>{
 			assert.equal(u2b(normalizer(b2u("aamno"),{diac:false,normalize_diac:true})), "mno")

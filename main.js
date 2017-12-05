@@ -1,19 +1,35 @@
 #!/usr/bin/env node
+
 var fs = require('fs');
 var es = require('event-stream');
 
-var utf8_to_ascii = {'\u0660':'0', '\u0661':'1', '\u0662':'2',
-                '\u0663':'3', '\u0664':'4', '\u0665':'5',
-                '\u0666':'6', '\u0667':'7', '\u0668':'8',
-                '\u0669':'9', '\u06F0':'0', '\u06F1':'1',
-                '\u06F2':'2', '\u06F3':'3', '\u06F4':'4',
-                '\u06F5':'5', '\u06F6':'6', '\u06F7':'7',
-                '\u06F8':'8', '\u06F9':'9'}
+var utf8_to_ascii = {
+    '\u0660': '0',
+    '\u0661': '1',
+    '\u0662': '2',
+    '\u0663': '3',
+    '\u0664': '4',
+    '\u0665': '5',
+    '\u0666': '6',
+    '\u0667': '7',
+    '\u0668': '8',
+    '\u0669': '9',
+    '\u06F0': '0',
+    '\u06F1': '1',
+    '\u06F2': '2',
+    '\u06F3': '3',
+    '\u06F4': '4',
+    '\u06F5': '5',
+    '\u06F6': '6',
+    '\u06F7': '7',
+    '\u06F8': '8',
+    '\u06F9': '9'
+}
 
 // Patterns
 // Match any character not in the Arabic charts
 // Including presentation forms
-// var p_not_arb = /[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g
+var p_not_arb = /[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g
 
 // Segment punctuation
 var latin_punc = /([\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u00A1-\u00BF\u2010-\u2027\u2030-\u205E\u20A0-\u20B5\u2E2E]{1})/g
@@ -42,7 +58,7 @@ var p_alef = /ا|إ|أ|آ|\u0671/
 // Escape Basic Latin (U0000) and Latin-1 (U0080) characters
 var p_latin = /[\u0000-\u00FF]/
 
-function arb_digit_to_ascii(string){
+function arb_digit_to_ascii(string) {
     "use strict";
     var ascii_digits = []
     for (var c_idx in string) {
@@ -55,103 +71,102 @@ function arb_digit_to_ascii(string){
     return '' + ascii_digits
 }
 
-function normalize_diac(string){
-        "use strict";
+function normalize_diac(string) {
+    "use strict";
     return string
-            // to delete starting taskeels (lookbehind)
-            .replace(/(\s|^)[\u064B-\u0652]+/g,'$1')
-            //beggining of surah
-            .replace(/([لمحكهعص])ٓ/g,"$1")
+        // to delete starting taskeels (lookbehind)
+        .replace(/(\s|^)[\u064B-\u0652]+/g, '$1')
+        //beggining of surah
+        .replace(/([لمحكهعص])ٓ/g, "$1")
 
-            //remove words that has only diacritics
-            .replace(/ [\u064B-\u0652]*(?=\s)/g,"")// used lookahead: look ahead if there is a space
+        //remove words that has only diacritics
+        .replace(/ [\u064B-\u0652]*(?=\s)/g, "") // used lookahead: look ahead if there is a space
 
-            // //delete harakah before the mad letter (e.g. fathah then alif)
-            // .replace(/َا/g,"ا")
-            // .replace(/ِي/g,"ي")
-            // .replace(/ُو/g,"و")
+        // //delete harakah before the mad letter (e.g. fathah then alif)
+        // .replace(/َا/g,"ا")
+        // .replace(/ِي/g,"ي")
+        // .replace(/ُو/g,"و")
 
-            // shaddah before harakah
-            .replace(/([ًٌٍَُِ])ّ/g,"ّ$1")
+        // shaddah before harakah
+        .replace(/([ًٌٍَُِ])ّ/g, "ّ$1")
 
-            // add sukon to mad Alif
-            .replace(/َا/g,"َاْ")
-            // .replace(/iy/g,"iyo")
-            // .replace(/uw/g,"uwo")
+        // add sukon to mad Alif
+        .replace(/َا/g, "َاْ")
+        // .replace(/iy/g,"iyo")
+        // .replace(/uw/g,"uwo")
 
-            //remove diac if the same is put more than once
-            .replace(/([\u064B-\u0652])\1/g,"$1")
+        //remove diac if the same is put more than once
+        .replace(/([\u064B-\u0652])\1/g, "$1")
 
-            // tanween then end
-            .replace(/اً(?=\s|$)/g,"ًا")
-            .replace(/ىً(?=\s|$)/g,"ًى")
+        // tanween then end
+        .replace(/اً(?=\s|$)/g, "ًا")
+        .replace(/ىً(?=\s|$)/g, "ًى")
 
-            
-            //bottom hamza
-            .replace(/إ[ًٌٍَُِ]/g,"إ")
-            
-            //remove incompaitble diacs
-            .replace(/([ًٌٍَُِْ])[ًٌٍَُِْ]/g,"$1")
 
-            //remove beginning shaddah
-            .replace(/(?=\s|^)ّ/g,"")
+        //bottom hamza
+        .replace(/إ[ًٌٍَُِ]/g, "إ")
 
-            //Tanween in wrong place
-            .replace(/[ًٌٍ]([^ ][^ ])/g,"$1")
+        //remove incompaitble diacs
+        .replace(/([ًٌٍَُِْ])[ًٌٍَُِْ]/g, "$1")
 
-            //bottom hamza
-            .replace(/إ[ًٌٍَُ]/g,"إِ")
-            .replace(/إ([^ِ])/g,"إِ$1")
+        //remove beginning shaddah
+        .replace(/(?=\s|^)ّ/g, "")
+
+        //Tanween in wrong place
+        .replace(/[ًٌٍ]([^ ][^ ])/g, "$1")
+
+        //bottom hamza
+        .replace(/إ[ًٌٍَُ]/g, "إِ")
+        .replace(/إ([^ِ])/g, "إِ$1")
 }
 
-function carefully_segment(line,config){
-        "use strict";
+function carefully_segment(line, config) {
+    "use strict";
     var tokens = []
     var stripped = line.trim()
-    if ( stripped.length > 0 && stripped[0] == '<'){
+    if (stripped.length > 0 && stripped[0] == '<') {
         tokens.push(line)
         return tokens
     }
-    
-    line = line.replace(/\u00AB/g,' " ')
-    line = line.replace(/\u00BB/g,' " ')
-    line = line.replace(/\u061F/g,' ? ')
-    line = line.replace(/\u2E2E/g,' ? ')
-    line = line.replace(/&lt;/g,' < ')
-    line = line.replace(/&gt;/g,' > ')
-    line = line.replace(/&amp;/g,' & ')
-    line = line.replace(/&quot;/g,' " ')
-    var splitted  =line.split(" ")
-    splitted.forEach(word=>{
-        if ( date_cluster.test(word))
+
+    line = line.replace(/\u00AB/g, ' " ')
+    line = line.replace(/\u00BB/g, ' " ')
+    line = line.replace(/\u061F/g, ' ? ')
+    line = line.replace(/\u2E2E/g, ' ? ')
+    line = line.replace(/&lt;/g, ' < ')
+    line = line.replace(/&gt;/g, ' > ')
+    line = line.replace(/&amp;/g, ' & ')
+    line = line.replace(/&quot;/g, ' " ')
+    var splitted = line.split(" ")
+    splitted.forEach(word => {
+        if (date_cluster.test(word))
             tokens.push(word)
-        else if ( email_cluster.test(word))
+        else if (email_cluster.test(word))
             tokens.push(word)
-        else if ( url_cluster.test(word))
-            tokens.push(word)   
-        else if ( /(-RRB-)|(-LRB-)/.test(word))
-            tokens.push(word)   
-        else if ( ellipsis.test(word))
+        else if (url_cluster.test(word))
+            tokens.push(word)
+        else if (/(-RRB-)|(-LRB-)/.test(word))
+            tokens.push(word)
+        else if (ellipsis.test(word))
             tokens = tokens.concat(word.replace(ellipsis, ' $1 ').split(" "))
-        else{
-            if(config.remove_punc){
+        else {
+            if (config.remove_punc) {
                 word = word.replace(latin_punc, '')
                 word = word.replace(other_punc, '')
                 word = word.replace(arb_punc, '')
-            }
-            else if(config.punc){
+            } else if (config.punc) {
                 word = word.replace(latin_punc, ' $1 ')
                 word = word.replace(other_punc, ' $1 ')
                 word = word.replace(arb_punc, ' $1 ')
             }
-            if(config.s_digit){
+            if (config.s_digit) {
                 word = word.replace(ascii_digit, ' $1 ')
                 word = word.replace(arb_digit, ' $1 ')
             }
-            word = word.replace(/([\(\)\+])/g,' $1 ').split(/ +/)
-            word.forEach(v=>{
+            word = word.replace(/([\(\)\+])/g, ' $1 ').split(/ +/)
+            word.forEach(v => {
                 // to prevent adding only taskeel words
-                if ( !p_diac_full.test(v))
+                if (!p_diac_full.test(v))
                     tokens.push(v)
             })
         }
@@ -159,34 +174,33 @@ function carefully_segment(line,config){
     return tokens
 }
 
-var norm_input_line = function (line,config){
-        "use strict";
-    if(config.normalize_diac)
+function norm_input_line(line, config) {
+    "use strict";
+    if (config.normalize_diac)
         line = normalize_diac(line)
-    line = carefully_segment(line,config)
+    line = carefully_segment(line, config)
     var new_line = []
     for (let word of line) {
         // if(config.normalize_diac && normalize_diac(word) != word)
         //     console.log("n=",normalize_diac(word)," o=",word)
         if (p_latin.test(word))
             new_line.push(word.trim())
-        else if (arb_digit.test(word)){
+        else if (arb_digit.test(word)) {
             var asciified = arb_digit_to_ascii(word)
             new_line.push(asciified)
-        }
-        else if (word == '\u060C')
+        } else if (word == '\u060C')
             new_line.push(',')
         else if (word == '\u061F' || word == '\u2E2E')
             new_line.push('?')
-        else{
-            if(config.diac)
-                word = word.replace(p_diac,'')
-            if(config.tatweel)
-                word = word.replace(p_tat,'')
-            if(config.alif)
-                word = word.replace(p_alef,'ا')
-            word = word.replace(p_quran,'')
-            if(word!=='')
+        else {
+            if (config.diac)
+                word = word.replace(p_diac, '')
+            if (config.tatweel)
+                word = word.replace(p_tat, '')
+            if (config.alif)
+                word = word.replace(p_alef, 'ا')
+            word = word.replace(p_quran, '')
+            if (word !== '')
                 new_line.push(word.trim())
         }
     }
@@ -194,12 +208,12 @@ var norm_input_line = function (line,config){
     return new_line
 }
 var default_config = {
-    'diac':false,
-    'alif':false,
-    'tatweel':true,
-    'digits':true,
-    'punc':true,
-    's_digits':true,
+    'diac': false,
+    'alif': false,
+    'tatweel': true,
+    'digits': true,
+    'punc': true,
+    's_digits': true,
     'remove_punc': false,
     'debug': false,
     'normalize_diac': true
@@ -207,48 +221,73 @@ var default_config = {
 
 if (require.main === module) { // called directly
     var argv = require('yargs')
-    .usage('Usage: $0 [args] -f inputfilename')
-    .default('f',"/dev/stdin")
-    .describe('f','input file')
-    .boolean('diac').describe('diac','remove diac').default('diac',false)
-    .boolean('alif').describe('alif','normalize alif').default('alif',false)
-    .boolean('tatweel').describe('tatweel','remove tatweel').default('tatweel',true)
-    .boolean('digits').describe('digits','romanize digits').default('digits',true)
-    .boolean('punc').describe('punc','segment punctuations').default('punc',true)
-    .boolean('s_digits').describe('s_digits','segment digits').default('s_digits',true)
-    .boolean('normalize_diac').describe('normalize_diac','normalize diacritics to one standard').default('normalize_diac',true)
-    .boolean('remove_punc').describe('remove_punc','remove punctuations').default('remove_punc',false)
-    .help('h')
-    .alias('h', 'help')
-    .argv
-    
+        .usage('Usage: $0 [args] -f inputfilename')
+        .default('f', "/dev/stdin")
+        .describe('f', 'input file')
+        .boolean('diac').describe('diac', 'remove diac').default('diac', false)
+        .boolean('alif').describe('alif', 'normalize alif').default('alif', false)
+        .boolean('tatweel').describe('tatweel', 'remove tatweel').default('tatweel', true)
+        .boolean('digits').describe('digits', 'romanize digits').default('digits', true)
+        .boolean('punc').describe('punc', 'segment punctuations').default('punc', true)
+        .boolean('s_digits').describe('s_digits', 'segment digits').default('s_digits', true)
+        .boolean('normalize_diac').describe('normalize_diac', 'normalize diacritics to one standard').default('normalize_diac', true)
+        .boolean('remove_punc').describe('remove_punc', 'remove punctuations').default('remove_punc', false)
+        .help('h')
+        .alias('h', 'help')
+        .argv
+
     var lineId = 0
     fs.createReadStream(argv.f)
-       .pipe(es.split("\n"))
-       .pipe(es.through(function(line){
+        .pipe(es.split("\n"))
+        .pipe(es.through(function(line) {
             "use strict";
             lineId = lineId + 1
-            this.emit('data',norm_input_line(line,argv)+"\n")
-       },function(){
+            this.emit('data', norm_input_line(line, argv) + "\n")
+        }, function() {
             "use strict";
             console.error(`Processed ${lineId} lines`)
-       }))
-      .pipe(process.stdout)
-}
-else
-    module.exports = function (infile,config){
-            "use strict";
-        
-        config = config || {}
-        Object.keys(default_config).forEach(e=>config[e] = config[e] || default_config[e])
+        }))
+        .pipe(process.stdout)
+} else
+    module.exports = function(infile, config) {
+        "use strict";
+        if (!infile && !config)
+            return {
+                arb_digit_to_ascii: arb_digit_to_ascii,
+                normalize_diac: normalize_diac,
+                carefully_segment: carefully_segment,
+                norm_input_line: norm_input_line,
+                regexp: {
+                    // utf8_to_ascii: utf8_to_ascii,
+                    p_not_arb: p_not_arb,
+                    latin_punc: latin_punc,
+                    arb_punc: arb_punc,
+                    other_punc: other_punc,
+                    ascii_digit: ascii_digit,
+                    arb_digit: arb_digit,
+                    date_cluster: date_cluster,
+                    email_cluster: email_cluster,
+                    url_cluster: url_cluster,
+                    ellipsis: ellipsis,
+                    p_diac: p_diac,
+                    p_diac_full: p_diac_full,
+                    p_tat: p_tat,
+                    p_quran: p_quran,
+                    p_alef: p_alef,
+                    p_latin: p_latin,
+                }
+            }
 
-        if(!Array.isArray(infile))
+        config = config || {}
+        Object.keys(default_config).forEach(e => config[e] = config[e] || default_config[e])
+
+        if (!Array.isArray(infile))
             infile = infile.split("\n")
         var text = []
-        for (let line of infile){
-            text.push(norm_input_line(line,config))
+        for (let line of infile) {
+            text.push(norm_input_line(line, config))
         }
-        if(config.debug)
-        console.error(`Processed ${text.length} lines`)
+        if (config.debug)
+            console.error(`Processed ${text.length} lines`)
         return text.join("\n")
     }
